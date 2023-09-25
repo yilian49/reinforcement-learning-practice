@@ -1,17 +1,22 @@
+from typing import Union
+
 import torch
 from torch import nn
 
 class CartpolePolicy(nn.Module):
-    def __init__(self):
+    def __init__(self, model : Union[None, nn.Module] = None):
         super(CartpolePolicy, self).__init__()
-        self.model = nn.Sequential(
-            nn.Linear(4,50),
-            nn.ReLU(),
-            nn.Linear(50,50),
-            nn.ReLU(),
-            nn.Linear(50,2),
-            nn.Softmax()
-        )
+        if model is None:
+            self.model = nn.Sequential(
+                nn.Linear(4,50),
+                nn.ReLU(),
+                nn.Linear(50,50),
+                nn.ReLU(),
+                nn.Linear(50,2),
+                nn.Softmax()
+            )
+        else:
+            self.model = model
     def forward(self, x):
         return self.model(x)
     
@@ -41,3 +46,39 @@ class CartpolePolicy(nn.Module):
                 counter += 1
             state = next_state
         return log_probs, rewards, sum(rewards)
+    
+class LSTM(nn.Module):
+    def __init__(self, input_dim, hidden_dim, output_dim):
+        super(LSTM, self).__init__()
+        self.lstm = nn.LSTM(input_dim, hidden_dim)
+        self.fc = nn.Linear(hidden_dim, output_dim)
+        self.hidden_dim = hidden_dim
+        self.hidden = None
+
+    def reset_hidden(self, batch_size=1):
+        self.hidden = (torch.zeros(1, batch_size, self.hidden_dim),
+                       torch.zeros(1, batch_size, self.hidden_dim))
+
+    def forward(self, x):
+        lstm_out, self.hidden = self.lstm(x, self.hidden)
+        output = self.fc(lstm_out)
+        return torch.softmax(output, dim=2)
+    
+class FC(nn.Module):
+    def __init__(self, topology = [4,50,50,2], activation_function = nn.ReLU):
+        super(FC, self).__init__()
+
+        self.topology = topology
+        self.activation_function = activation_function
+        layers = []
+        for i in range(len(topology) - 1):
+            # Linear layer
+            layers.append(nn.Linear(topology[i], topology[i+1]))
+            # Add an activation function (e.g., ReLU) for all but the last layer
+            if i < len(topology) - 2:
+                layers.append(nn.ReLU())
+
+        self.model = nn.Sequential(*layers)
+
+    def forward(self, x):
+        return self.model(x)

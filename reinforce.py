@@ -1,11 +1,14 @@
 from copy import deepcopy
 
 import torch
+import numpy as np
 
-def reinforce(env, policy, optimizer, episodes=500, gamma=0.99):
+def reinforce(env, policy, optimizer, episodes=500, gamma=0.99, randomize = False):
     score_history = []
     best_score = 0
     for episode in range(episodes):
+        if randomize:
+            randomize_env(env)
         log_probs, rewards, score = policy.test_policy(env)
 
         returns = []
@@ -32,3 +35,7 @@ def reinforce(env, policy, optimizer, episodes=500, gamma=0.99):
             best_model_wts = deepcopy(policy.state_dict())
             print(f'new best score: {score}')
     return score_history, best_model_wts
+
+def randomize_env(env):
+    env.length = np.random.uniform(0.5, 1.0)
+    env.gravity = np.random.uniform(9.0, 10.0)
