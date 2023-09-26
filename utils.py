@@ -1,12 +1,12 @@
 import torch
 
-from models import CartpolePolicy
+from models import LSTM_Cartpole, FC_Cartpole
 
 def save_policy_network(filepath, policy_net, training_info = None):
     checkpoint = {
         'state_dict': policy_net.state_dict(),
-        'child_net_type': type(policy_net.model).__name__,
-        'child_net_params': policy_net.model.get_hyperparameters() 
+        'hyperparameters': policy_net.get_hyperparameters(),
+        'class_name' : policy_net.__class__.__name__ 
     }
     if training_info is not None:
         checkpoint['training_info'] = training_info
@@ -14,15 +14,10 @@ def save_policy_network(filepath, policy_net, training_info = None):
 
 def load_policy_network(filepath):
     checkpoint = torch.load(filepath)
-    
-    # Create the child network using the type and hyperparameters
-    ChildNetClass = globals()[checkpoint['child_net_type']]
-    child_net = ChildNetClass(**checkpoint['child_net_params'])
+    model_class = globals()[checkpoint['class_name']]
+    model = model_class(**checkpoint['hyperparameters'])
+    model.load_state_dict(checkpoint['state_dict'])
 
-    # Create the policy network with the child network
-    policy_net = CartpolePolicy(child_net)
-    policy_net.load_state_dict(checkpoint['state_dict'])
-
-    training_info = checkpoint.get('training_info', None)
+    # training_info = checkpoint.get('training_info', None)
     
-    return policy_net
+    return model
