@@ -28,8 +28,10 @@ def test_gravities(policy):
 
 def main():
     env = gym.make('CartPole-v1')
-    policy = FC_Cartpole()
+    policy = FC_Cartpole(topology=[4,100,100,100,2])
     opt = optim.Adam(policy.parameters(), lr = 0.001)
+    # policy = FC_Cartpole()
+    # opt = optim.Adam(policy.parameters(), lr = 0.001)
     score_history, best_params = reinforce(env, policy, opt, episodes=episodes)
     test_scores = test_gravities(policy=policy)
     save_policy_network(
@@ -42,18 +44,19 @@ def main():
         }
         )
     
-    policy = FC_Cartpole()
-    score_history, best_params = reinforce(env, policy, opt, episodes=episodes, randomize=True)
-    test_scores = test_gravities(policy=policy)
-    save_policy_network(
-        f'{exp}/DR.pt', 
-        policy_net=policy, 
-        training_info={
-            'score_history' : score_history,
-            'best_params' : best_params,
-            'test_scores' : test_scores
-        }
-        )
+    # policy = FC_Cartpole(topology=[4,100,100,100,2])
+    # opt = optim.Adam(policy.parameters(), lr = 0.001)
+    # score_history, best_params = reinforce(env, policy, opt, episodes=episodes, randomize=True)
+    # test_scores = test_gravities(policy=policy)
+    # save_policy_network(
+    #     f'{exp}/DR.pt', 
+    #     policy_net=policy, 
+    #     training_info={
+    #         'score_history' : score_history,
+    #         'best_params' : best_params,
+    #         'test_scores' : test_scores
+    #     }
+    #     )
     
 if __name__ == '__main__':
     main()
