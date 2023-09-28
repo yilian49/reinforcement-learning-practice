@@ -30,6 +30,7 @@ class Reinforce():
             ):
         score_history = []
         best_score = 0
+        termination_counter = 0
         for episode in range(episodes):
             if randomize:
                 self.randomize_env(env)
@@ -58,13 +59,11 @@ class Reinforce():
                 best_score = score
                 best_model_wts = deepcopy(policy.state_dict())
                 print(f'new best score: {score}')
-            if (
-                score_history[-1] > termination - 2 and 
-                score_history[-2] > termination - 2 and 
-                score_history[-3] > termination - 2
-            ):
-                print('terminating early')
-                break
+            if score > termination - 2:
+                termination_counter += 1
+                if termination_counter > 10:
+                    print('terminating early')
+                    break
         return score_history, best_model_wts
 
     def randomize_env(self, env):
