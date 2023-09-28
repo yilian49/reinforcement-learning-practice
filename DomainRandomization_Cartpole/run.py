@@ -1,18 +1,16 @@
+import sys
 import os
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 import gymnasium as gym
 import torch
 from torch import optim
+import numpy as np
 
 from models import FC_Cartpole
-from reinforce import reinforce
+from reinforce import Reinforce
 from utils import save_policy_network
-
-exp = 'DomainRandomization_FC_gravity_length'
-if os.path.exists(exp):
-    pass
-else:
-    os.makedirs(exp)
 
 gravities = [ 7, 9, 9.8,  10, 12, 14 ,16, 18, 20]
 lengths = [0.3, 0.4, 0.5, 0.7, 0.9, 1.1, 1.5, 2.0, 2.5, 3.0]
@@ -38,16 +36,18 @@ def test_gravity_and_lengths(policy):
     return scores
 
 def main():
+    R = Reinforce(
+        length_range = np.random.uniform(0.5, 1.0),
+        gravity_range = np.random.uniform(9, 11)
+        )
     env = gym.make('CartPole-v1')
-    policy = FC_Cartpole(topology=[4,100,100,100,2])
+    policy = FC_Cartpole(topology=[4,128,128,128,2])
     opt = optim.Adam(policy.parameters(), lr = 0.001)
-    # policy = FC_Cartpole()
-    # opt = optim.Adam(policy.parameters(), lr = 0.001)
-    score_history, best_params = reinforce(env, policy, opt, episodes=episodes)
+    score_history, best_params = R.reinforce(env, policy, opt, episodes=episodes, randomize=False)
     test_scores = test_gravity_and_lengths(policy=policy)
 
     save_policy_network(
-        f'{exp}/baseline.pt', 
+        f'baseline.pt', 
         policy_net=policy, 
         training_info={
             'score_history' : score_history,
@@ -55,15 +55,15 @@ def main():
             'test_scores' : test_scores,
             'gravities' : gravities,
             'lengths' : lengths
-        }
+            }
         )
     
-    policy = FC_Cartpole(topology=[4,100,100,100,2])
+    policy = FC_Cartpole(topology=[4,128,128,128,2])
     opt = optim.Adam(policy.parameters(), lr = 0.001)
-    score_history, best_params = reinforce(env, policy, opt, episodes=episodes, randomize=True)
+    score_history, best_params = R.reinforce(env, policy, opt, episodes=episodes, randomize=True)
     test_scores = test_gravity_and_lengths(policy=policy)
     save_policy_network(
-        f'{exp}/DR.pt', 
+        f'DR.pt', 
         policy_net=policy, 
         training_info={
             'score_history' : score_history,
@@ -71,7 +71,7 @@ def main():
             'test_scores' : test_scores,
             'gravities' : gravities,
             'lengths' : lengths
-        }
+            }
         )
     
 if __name__ == '__main__':
